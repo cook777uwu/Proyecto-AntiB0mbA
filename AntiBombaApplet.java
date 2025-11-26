@@ -136,14 +136,14 @@ public class AntiBombaApplet extends Applet implements ActionListener, Runnable 
             sequenceInfo = "¡Desarmada!";
         } else {
             // Muestra el siguiente código requerido (parte superior de la Pila)
-            //sequenceInfo = "Siguiente código: " + formatCode(disarmSequence.peek()); 
+            sequenceInfo = "Siguiente código: " + formatCode(disarmSequence.peek()); 
         }
         
         String errorInfo = "Errores: " + errorQueue.size() + "/" + MAX_ERRORS;
         
         sequenceLabel.setText("Códigos restantes: " + disarmSequence.size() + " | " + errorInfo);
-        //messageLabel.setText(sequenceInfo + " - Ingresa un código.");
-        messageLabel.setText("Introduce el siguiente código para desarmar la bomba.");
+        messageLabel.setText(sequenceInfo + " - Ingresa un código.");
+        //messageLabel.setText("Introduce el siguiente código para desarmar la bomba.");
     }
     
     // --- Lógica de Fin del Juego (Igual) ---
@@ -203,8 +203,6 @@ public class AntiBombaApplet extends Applet implements ActionListener, Runnable 
                         // 2. Verificar si la Cola está llena (Penalización)
                         if (errorQueue.size() >= MAX_ERRORS) {
                             // Aplicar Penalización
-                            //timeLeft -= PENALTY_TIME;
-                            //timerLabel.setText("Tiempo: " + timeLeft + "s (-" + PENALTY_TIME + "s PENALIZACIÓN!)");
                             timeLeft=0; // Penalización inmediata para terminar el juego
                             gameOver(false); // Fin del juego por penalizacións
                             
