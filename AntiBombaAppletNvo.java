@@ -3,13 +3,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 
-/**
- * AntiBombaApplet
- * - 4 códigos aleatorios (00..99) en una pila (LIFO)
- * - Cola de errores (FIFO)
- * - Temporizador gráfico 30 -> 0
- * - Muestra imagen bomba.gif (animada OK)
- */
 public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnable {
 
     // UI
@@ -24,7 +17,8 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
     private final int MAX_ERRORES = 3;
 
     // Temporizador
-    private int tiempoRestante = 30;
+    private int tiempoRestante = 60;  // 60 segundos ***
+    private final int TIEMPO_TOTAL = 60;
     private boolean contando = false;
 
     // Hilo para actualizar temporizador/UI
@@ -57,7 +51,7 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
 
         add(norte, BorderLayout.NORTH);
 
-        // Cargar imagen (archivo bomba.gif en la misma carpeta que el html)
+        // Cargar imagen (archivo bomba.gif en la misma carpeta)
         bombaImg = getImage(getCodeBase(), "bomba.gif");
 
         // Inicializar juego
@@ -73,11 +67,24 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
             secuencia.push(String.format("%02d", num));
         }
 
-        // Nota: si quieres mostrar el próximo código (para pruebas), usa secuencia.peek()
         errores = new LinkedList<>();
-        tiempoRestante = 30;
+        tiempoRestante = TIEMPO_TOTAL;
         contando = true;
-        infoLabel.setText("Introduce el código. Códigos restantes: " + secuencia.size());
+        
+        // Descomentar las siguiente línea para mostrar el código requerido en el infoLabel para fines de práctica.
+        if (!secuencia.isEmpty()) {
+             infoLabel.setText("CÓDIGO REQUERIDO: " + secuencia.peek() + " | Códigos restantes: " + secuencia.size());
+         } else {
+             infoLabel.setText("Juego listo. Presiona Reiniciar.");
+            }
+        // ------------------------------------------------------------------
+
+        // Mensaje estándar para el jugador. esta linea se usa en la versión final. <-------
+        //infoLabel.setText("Introduce el código. Códigos restantes: " + secuencia.size());
+
+
+        // Asegurar que se vuelve a cargar la imagen de la bomba NO EXPLOTADA al reiniciar
+        bombaImg = getImage(getCodeBase(), "bomba.gif"); 
 
         // Iniciar hilo si no está corriendo
         if (hilo == null || !hilo.isAlive()) {
@@ -125,7 +132,7 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
         }
 
         if (secuencia == null || secuencia.isEmpty()) {
-            infoLabel.setText("Ya desarmaste la bomba. Reinicia para jugar de nuevo.");
+            infoLabel.setText("¡BOMBA DESARMADA! Reinicia para jugar de nuevo.");
             return;
         }
 
@@ -148,17 +155,34 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
             String esperado = secuencia.peek();
             if (code.equals(esperado)) {
                 secuencia.pop();
-                infoLabel.setText("Correcto. Códigos restantes: " + secuencia.size());
+                
                 if (secuencia.isEmpty()) {
                     contando = false;
                     infoLabel.setText("¡BOMBA DESARMADA!");
+                } else {
+                    infoLabel.setText("CORRECTO. Códigos restantes: " + secuencia.size());
+                    
+                    // --- CÓDIGO DE TRAMPA/DEMOSTRACIÓN (COMENTADO PARA JUGADORES) ---
+                    // Descomenta la línea de abajo para mostrar el próximo código.
+                    infoLabel.setText("CORRECTO. CÓDIGO REQUERIDO: " + secuencia.peek() + " | Códigos restantes: " + secuencia.size());
                 }
             } else {
                 errores.add(code);
-                infoLabel.setText("Incorrecto. Errores: " + errores.size() + " / " + MAX_ERRORES);
+                
+                // Mensaje estándar de error
+                infoLabel.setText("INCORRECTO. Errores: " + errores.size() + " / " + MAX_ERRORES + ". Códigos restantes: " + secuencia.size());
+
+                // --- CÓDIGO DE TRAMPA/DEMOSTRACIÓN (COMENTADO PARA JUGADORES) ---
+                // Descomenta la línea de abajo para mostrar el código requerido con el mensaje de error.
+                String nextCode = secuencia.isEmpty() ? "" : " | CÓDIGO REQUERIDO: " + secuencia.peek();
+                infoLabel.setText("INCORRECTO. Errores: " + errores.size() + " / " + MAX_ERRORES + nextCode);
+                
                 if (errores.size() >= MAX_ERRORES) {
                     contando = false;
                     infoLabel.setText("Demasiados errores. Bomba explotó.");
+                    
+                    // Carga de imagen de explosión al perder por errores
+                    bombaImg = getImage(getCodeBase(), "bomb GIF.gif"); 
                 }
             }
         } catch (NumberFormatException nfe) {
@@ -186,6 +210,9 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
                     contando = false;
                     if (!secuencia.isEmpty() && errores.size() < MAX_ERRORES) {
                         infoLabel.setText("¡Tiempo agotado! Bomba explotó.");
+                        
+                        // Carga de imagen de explosión al perder por tiempo
+                        bombaImg = getImage(getCodeBase(), "bomb GIF.gif"); 
                     }
                 }
             }
@@ -211,7 +238,7 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
             g.setColor(Color.DARK_GRAY);
             g.fillOval(20, 60, 140, 140);
             g.setColor(Color.BLACK);
-            g.drawString("bomba.gif no encontrada", 30, 140);
+            g.drawString("bomb GIF.gif", 30, 140);
         }
 
         // Dibujar temporizador gráfico (círculo con arco) a la derecha
@@ -224,7 +251,7 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
         g.fillOval(cx - r, cy - r, r * 2, r * 2);
 
         // arco que representa tiempo restante (verde -> amarillo -> rojo)
-        double pct = Math.max(0, tiempoRestante) / 30.0; // 0..1
+        double pct = Math.max(0, tiempoRestante) / (double)TIEMPO_TOTAL; // 0..1, usando TIEMPO_TOTAL (60)
         int ang = (int) Math.round(pct * 360);
 
         // color según porcentaje
@@ -232,7 +259,7 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
         else if (pct > 0.2) g.setColor(new Color(200, 150, 0)); // amarillo oscuro
         else g.setColor(new Color(180, 30, 30));                // rojo
 
-        // fillArc: start at 90 degrees, negative to go clockwise
+        // fillArc: EMPIEZA EN 90 GRADOS, NEGATIVO PARA IR EN SENTIDO HORARIO
         g.fillArc(cx - r, cy - r, r * 2, r * 2, 90, -ang);
 
         // borde
@@ -258,9 +285,14 @@ public class AntiBombaAppletNvo extends Applet implements ActionListener, Runnab
         // Resultado final grande
         if (!contando) {
             String msg = null;
-            if (secuencia.isEmpty()) msg = "¡BOMBA DESARMADA!";
-            else if (errores.size() >= MAX_ERRORES) msg = "BOMBA EXPLOTÓ (errores)";
-            else if (tiempoRestante <= 0) msg = "BOMBA EXPLOTÓ (tiempo)";
+            if (secuencia.isEmpty()) {
+                msg = "¡BOMBA DESARMADA!";
+            } else if (errores.size() >= MAX_ERRORES) {
+                msg = "BOMBA EXPLOTÓ (errores)";
+            } else if (tiempoRestante <= 0) {
+                msg = "BOMBA EXPLOTÓ (tiempo)";
+            }
+
             if (msg != null) {
                 g.setFont(new Font("Arial", Font.BOLD, 20));
                 int mw = g.getFontMetrics().stringWidth(msg);
